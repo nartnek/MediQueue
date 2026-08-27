@@ -1,5 +1,5 @@
 import LocationSearch from "@/components/LocationSearch";
-
+import HospitalList from "@/components/HospitalList";
 export default function Home() {
   return (
     <main className="min-h-screen bg-gray-50">
@@ -33,6 +33,7 @@ export default function Home() {
           <LocationSearch />
         </div>
       </section>
+      <HospitalList />
     </main>
   );
 }
