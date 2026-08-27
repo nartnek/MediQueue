@@ -1,3 +1,4 @@
+import { mockHospitals } from "@/lib/mockHospitals";
 import HospitalCard from "./HospitalCard";
 
 export default function HospitalList() {
@@ -15,29 +16,12 @@ export default function HospitalList() {
       </div>
 
       <div className="space-y-4">
-        <HospitalCard
-          name="Vancouver General Hospital"
-          address="899 W 12th Ave, Vancouver, BC"
-          distance={1.8}
-          waitTime={32}
-          lastUpdated="5 min ago"
-        />
-
-        <HospitalCard
-          name="St. Paul's Hospital"
-          address="1081 Burrard St, Vancouver, BC"
-          distance={3.2}
-          waitTime={51}
-          lastUpdated="8 min ago"
-        />
-
-        <HospitalCard
-          name="Mount Saint Joseph Hospital"
-          address="3080 Prince Edward St, Vancouver, BC"
-          distance={4.1}
-          waitTime={24}
-          lastUpdated="3 min ago"
-        />
+        {mockHospitals.map((hospital) => (
+          <HospitalCard
+            key={hospital.id}
+            hospital={hospital}
+          />
+        ))}
       </div>
     </section>
   );
