@@ -1,6 +1,42 @@
-import LocationSearch from "@/components/LocationSearch";
+"use client";
+
+import { useState } from "react";
+import { Hospital } from "@/types/hospital";
 import HospitalList from "@/components/HospitalList";
+import LocationSearch from "@/components/LocationSearch";
+
 export default function Home() {
+  const [hospitals, setHospitals] = useState<Hospital[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const findNearbyHospitals = async (
+    latitude: number,
+    longitude: number
+  ) => {
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const response = await fetch(
+        `/api/hospitals?lat=${latitude}&lng=${longitude}`
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch nearby hospitals.");
+      }
+
+      const data = await response.json();
+
+      setHospitals(data.hospitals);
+    } catch (error) {
+      console.error(error);
+      setError("Unable to find nearby hospitals.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <main className="min-h-screen bg-gray-50">
       <nav className="border-b border-gray-200 bg-white">
@@ -30,10 +66,20 @@ export default function Home() {
             wait times, and get directions from your location.
           </p>
 
-          <LocationSearch />
+          <LocationSearch
+            onLocationFound={findNearbyHospitals}
+            isLoading={isLoading}
+          />
+
+          {error && (
+            <p className="mt-4 text-sm text-red-600">
+              {error}
+            </p>
+          )}
         </div>
       </section>
-      <HospitalList />
+
+      <HospitalList hospitals={hospitals} />
     </main>
   );
 }

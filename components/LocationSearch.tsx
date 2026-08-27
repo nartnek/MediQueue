@@ -2,14 +2,16 @@
 
 import { useState } from "react";
 
-export default function LocationSearch() {
-  const [location, setLocation] = useState<{
-    latitude: number;
-    longitude: number;
-  } | null>(null);
+interface LocationSearchProps {
+  onLocationFound: (latitude: number, longitude: number) => void;
+  isLoading: boolean;
+}
 
+export default function LocationSearch({
+  onLocationFound,
+  isLoading,
+}: LocationSearchProps) {
   const [error, setError] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
 
   const getCurrentLocation = () => {
     if (!navigator.geolocation) {
@@ -17,21 +19,16 @@ export default function LocationSearch() {
       return;
     }
 
-    setIsLoading(true);
     setError(null);
 
     navigator.geolocation.getCurrentPosition(
       (position) => {
-        setLocation({
-          latitude: position.coords.latitude,
-          longitude: position.coords.longitude,
-        });
-
-        setIsLoading(false);
+        onLocationFound(
+          position.coords.latitude,
+          position.coords.longitude
+        );
       },
       (error) => {
-        setIsLoading(false);
-
         if (error.code === error.PERMISSION_DENIED) {
           setError("Location permission was denied.");
         } else if (error.code === error.POSITION_UNAVAILABLE) {
@@ -50,7 +47,7 @@ export default function LocationSearch() {
         disabled={isLoading}
         className="mb-4 w-full rounded-lg bg-blue-600 px-6 py-3 font-medium text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
       >
-        {isLoading ? "Getting location..." : "📍 Use my current location"}
+        {isLoading ? "Finding nearby hospitals..." : "📍 Use my current location"}
       </button>
 
       <div className="flex gap-2">
@@ -64,18 +61,6 @@ export default function LocationSearch() {
           Search
         </button>
       </div>
-
-      {location && (
-        <div className="mt-4 rounded-lg bg-green-50 p-4 text-left text-sm text-green-800">
-          <p className="font-medium">Location found</p>
-          <p className="mt-1">
-            Latitude: {location.latitude.toFixed(6)}
-          </p>
-          <p>
-            Longitude: {location.longitude.toFixed(6)}
-          </p>
-        </div>
-      )}
 
       {error && (
         <div className="mt-4 rounded-lg bg-red-50 p-4 text-left text-sm text-red-700">

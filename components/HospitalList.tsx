@@ -1,15 +1,21 @@
 "use client";
 
 import { useState } from "react";
-import { mockHospitals } from "@/lib/mockHospitals";
+import { Hospital } from "@/types/hospital";
 import HospitalCard from "./HospitalCard";
+
+interface HospitalListProps {
+  hospitals: Hospital[];
+}
 
 type SortOption = "distance" | "waitTime";
 
-export default function HospitalList() {
+export default function HospitalList({
+  hospitals,
+}: HospitalListProps) {
   const [sortBy, setSortBy] = useState<SortOption>("distance");
 
-  const sortedHospitals = [...mockHospitals].sort((a, b) => {
+  const sortedHospitals = [...hospitals].sort((a, b) => {
     if (sortBy === "distance") {
       return a.distance - b.distance;
     }
@@ -19,6 +25,10 @@ export default function HospitalList() {
 
     return a.waitTime - b.waitTime;
   });
+
+  if (hospitals.length === 0) {
+    return null;
+  }
 
   return (
     <section className="mx-auto w-full max-w-3xl px-6 pb-16">
