@@ -45,25 +45,26 @@ export default function Home() {
             MediQueue
           </h1>
 
-          <button className="text-sm text-gray-600 hover:text-gray-900">
-            About
-          </button>
+          <span className="text-sm text-gray-500">
+            British Columbia
+          </span>
         </div>
       </nav>
 
       <section className="flex min-h-[calc(100vh-73px)] flex-col items-center justify-center px-6 text-center">
         <div className="max-w-3xl">
-          <p className="mb-4 text-sm font-medium uppercase tracking-wider text-blue-600">
-            Emergency care, simplified
-          </p>
+          <div className="mb-5 inline-flex items-center rounded-full bg-blue-50 px-4 py-2 text-sm font-medium text-blue-700">
+            🏥 Emergency care in British Columbia
+          </div>
 
           <h2 className="text-4xl font-bold tracking-tight text-gray-900 sm:text-6xl">
             Find the nearest ER
           </h2>
 
           <p className="mx-auto mt-6 max-w-2xl text-lg leading-8 text-gray-600">
-            Find nearby hospitals, compare estimated emergency room
-            wait times, and get directions from your location.
+            Find nearby emergency departments in BC, compare
+            estimated wait times, and choose the right hospital
+            for you.
           </p>
 
           <LocationSearch
@@ -76,6 +77,10 @@ export default function Home() {
               {error}
             </p>
           )}
+
+          <p className="mt-5 text-xs text-gray-400">
+            Currently serving hospitals in British Columbia
+          </p>
         </div>
       </section>
 
