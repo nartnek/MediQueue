@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { mockHospitals } from "@/lib/mockHospitals";
+import { pool } from "@/lib/db";
 
 function calculateDistance(
   lat1: number,
@@ -18,7 +18,8 @@ function calculateDistance(
       Math.cos((lat2 * Math.PI) / 180) *
       Math.sin(lonDifference / 2) ** 2;
 
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  const c =
+    2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 
   return earthRadius * c;
 }
@@ -31,7 +32,9 @@ export async function GET(request: NextRequest) {
 
   if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
     return NextResponse.json(
-      { error: "Valid latitude and longitude are required." },
+      {
+        error: "Valid latitude and longitude are required.",
+      },
       { status: 400 }
     );
   }
@@ -43,24 +46,52 @@ export async function GET(request: NextRequest) {
     longitude > 180
   ) {
     return NextResponse.json(
-      { error: "Invalid latitude or longitude." },
+      {
+        error: "Invalid latitude or longitude.",
+      },
       { status: 400 }
     );
   }
 
-  const hospitals = mockHospitals
-    .map((hospital) => ({
-      ...hospital,
-      distance: calculateDistance(
+  try {
+    const result = await pool.query(`
+      SELECT
+        id,
+        name,
+        address,
+        city,
+        province,
         latitude,
-        longitude,
-        hospital.latitude,
-        hospital.longitude
-      ),
-    }))
-    .sort((a, b) => a.distance - b.distance);
+        longitude
+      FROM hospitals
+      WHERE province = 'BC'
+    `);
 
-  return NextResponse.json({
-    hospitals,
-  });
+    const hospitals = result.rows
+      .map((hospital) => ({
+        ...hospital,
+        distance: calculateDistance(
+          latitude,
+          longitude,
+          hospital.latitude,
+          hospital.longitude
+        ),
+        waitTime: null,
+        lastUpdated: null,
+      }))
+      .sort((a, b) => a.distance - b.distance);
+
+    return NextResponse.json({
+      hospitals,
+    });
+  } catch (error) {
+    console.error("Database error:", error);
+
+    return NextResponse.json(
+      {
+        error: "Unable to retrieve hospitals.",
+      },
+      { status: 500 }
+    );
+  }
 }
