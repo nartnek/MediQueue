@@ -29,16 +29,24 @@ export default function Home() {
         `/api/hospitals?lat=${latitude}&lng=${longitude}`
       );
 
-      if (!response.ok) {
-        throw new Error("Failed to fetch nearby hospitals.");
-      }
-
       const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          data.error || "Failed to fetch nearby hospitals."
+        );
+      }
 
       setHospitals(data.hospitals);
     } catch (error) {
       console.error(error);
-      setError("Unable to find nearby hospitals. Please try again.");
+
+      setError(
+        error instanceof Error
+          ? error.message
+          : "Unable to find nearby hospitals. Please try again."
+      );
+
       setHospitals([]);
     } finally {
       setIsLoading(false);
@@ -72,9 +80,9 @@ export default function Home() {
           </h2>
 
           <p className="mx-auto mt-6 max-w-2xl text-lg leading-8 text-gray-600">
-            Find nearby emergency departments in BC, compare
-            estimated wait times, and get directions to the
-            hospital that works best for you.
+            Find nearby emergency departments in BC,
+            compare estimated wait times, and get directions
+            to the hospital that works best for you.
           </p>
 
           <LocationSearch
@@ -85,9 +93,15 @@ export default function Home() {
           {error && (
             <div
               role="alert"
-              className="mx-auto mt-5 max-w-xl rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
+              className="mx-auto mt-5 max-w-xl rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-left text-sm text-red-700"
             >
-              {error}
+              <p className="font-medium">
+                Unable to load hospitals
+              </p>
+
+              <p className="mt-1">
+                {error}
+              </p>
             </div>
           )}
 
@@ -97,10 +111,13 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Loading state */}
+      {/* Loading */}
       {isLoading && (
         <section className="mx-auto max-w-5xl px-6 pb-12">
-          <div className="rounded-xl border border-gray-200 bg-white p-8 text-center shadow-sm">
+          <div
+            role="status"
+            className="rounded-xl border border-gray-200 bg-white p-10 text-center shadow-sm"
+          >
             <div className="mx-auto h-8 w-8 animate-spin rounded-full border-4 border-gray-200 border-t-blue-600" />
 
             <p className="mt-4 font-medium text-gray-900">
@@ -108,39 +125,61 @@ export default function Home() {
             </p>
 
             <p className="mt-1 text-sm text-gray-500">
-              Checking hospitals around your location.
+              Checking hospitals around your selected
+              location.
             </p>
           </div>
         </section>
       )}
 
-      {/* Empty state */}
-      {!isLoading && userLocation && hospitals.length === 0 && !error && (
+      {/* Error retry */}
+      {!isLoading && error && (
         <section className="mx-auto max-w-5xl px-6 pb-12">
           <div className="rounded-xl border border-gray-200 bg-white p-8 text-center shadow-sm">
-            <div className="text-3xl">🏥</div>
+            <div
+              className="text-3xl"
+              aria-hidden="true"
+            >
+              ⚠️
+            </div>
 
             <h3 className="mt-3 font-semibold text-gray-900">
-              No hospitals found
+              We could not load your results
             </h3>
 
-            <p className="mt-1 text-sm text-gray-500">
-              We could not find any hospitals for this location.
-              Try searching for another BC city or address.
+            <p className="mx-auto mt-1 max-w-md text-sm text-gray-500">
+              Please check your location and try searching
+              again.
             </p>
           </div>
         </section>
       )}
 
       {/* Results */}
-      {!isLoading && userLocation && hospitals.length > 0 && (
-        <div className="mx-auto max-w-5xl px-6 pb-16">
-          <HospitalList
-            hospitals={hospitals}
-            userLocation={userLocation}
-          />
-        </div>
-      )}
+      {!isLoading &&
+        !error &&
+        userLocation &&
+        hospitals.length > 0 && (
+          <div className="mx-auto max-w-5xl px-6 pb-16">
+            <HospitalList
+              hospitals={hospitals}
+              userLocation={userLocation}
+            />
+          </div>
+        )}
+
+      {/* No results */}
+      {!isLoading &&
+        !error &&
+        userLocation &&
+        hospitals.length === 0 && (
+          <div className="mx-auto max-w-5xl px-6 pb-16">
+            <HospitalList
+              hospitals={hospitals}
+              userLocation={userLocation}
+            />
+          </div>
+        )}
     </main>
   );
 }

@@ -18,12 +18,16 @@ export default function LocationSearch({
   const [isSearching, setIsSearching] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const searching = isSearching || isLoading;
+
   const handleAddressSearch = async (
     event: React.FormEvent<HTMLFormElement>
   ) => {
     event.preventDefault();
 
-    if (!address.trim()) {
+    const trimmedAddress = address.trim();
+
+    if (!trimmedAddress) {
       setError("Please enter an address or city.");
       return;
     }
@@ -33,7 +37,9 @@ export default function LocationSearch({
 
     try {
       const response = await fetch(
-        `/api/geocode?address=${encodeURIComponent(address)}`
+        `/api/geocode?address=${encodeURIComponent(
+          trimmedAddress
+        )}`
       );
 
       const data = await response.json();
@@ -79,7 +85,7 @@ export default function LocationSearch({
         switch (error.code) {
           case error.PERMISSION_DENIED:
             setError(
-              "Location permission was denied. Please allow location access or search for an address instead."
+              "Location permission was denied. You can search for an address instead."
             );
             break;
 
@@ -104,50 +110,83 @@ export default function LocationSearch({
     );
   };
 
-  const searching = isSearching || isLoading;
-
   return (
     <div className="mx-auto mt-8 w-full max-w-xl">
       <form
         onSubmit={handleAddressSearch}
         className="flex flex-col gap-3 sm:flex-row"
       >
-        <input
-          type="text"
-          value={address}
-          onChange={(event) => setAddress(event.target.value)}
-          placeholder="Enter an address or city in BC"
-          disabled={searching}
-          className="min-w-0 flex-1 rounded-lg border border-gray-300 bg-white px-4 py-3 text-sm text-gray-900 shadow-sm outline-none transition placeholder:text-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 disabled:bg-gray-100"
-        />
+        <div className="relative flex-1">
+          <label
+            htmlFor="address"
+            className="sr-only"
+          >
+            Address or city
+          </label>
+
+          <input
+            id="address"
+            type="text"
+            value={address}
+            onChange={(event) => {
+              setAddress(event.target.value);
+
+              if (error) {
+                setError(null);
+              }
+            }}
+            placeholder="Enter an address or city in BC"
+            disabled={searching}
+            autoComplete="street-address"
+            className="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-sm text-gray-900 shadow-sm outline-none transition placeholder:text-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 disabled:cursor-not-allowed disabled:bg-gray-100"
+          />
+        </div>
 
         <button
           type="submit"
           disabled={searching}
-          className="rounded-lg bg-blue-600 px-5 py-3 text-sm font-medium text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
+          className="rounded-lg bg-blue-600 px-6 py-3 text-sm font-medium text-white shadow-sm transition hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
         >
           {isSearching ? "Searching..." : "Search"}
         </button>
       </form>
 
-      <div className="mt-3">
-        <button
-          type="button"
-          onClick={handleUseCurrentLocation}
-          disabled={searching}
-          className="text-sm font-medium text-blue-600 transition hover:text-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
-        >
-          Use my current location
-        </button>
+      <div className="mt-4 flex items-center justify-center gap-3">
+        <div className="h-px flex-1 bg-gray-200" />
+
+        <span className="text-xs text-gray-400">
+          OR
+        </span>
+
+        <div className="h-px flex-1 bg-gray-200" />
       </div>
 
+      <button
+        type="button"
+        onClick={handleUseCurrentLocation}
+        disabled={searching}
+        className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-3 text-sm font-medium text-gray-700 shadow-sm transition hover:border-gray-300 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+      >
+        <span aria-hidden="true">📍</span>
+
+        {isLoading
+          ? "Finding nearby hospitals..."
+          : "Use my current location"}
+      </button>
+
       {error && (
-        <p
+        <div
           role="alert"
-          className="mt-3 text-left text-sm text-red-600"
+          className="mt-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-left text-sm text-red-700"
         >
-          {error}
-        </p>
+          <p className="font-medium">
+            Something went wrong
+          </p>
+
+          <p className="mt-1">
+            {error}
+          </p>
+        </div>
       )}
     </div>
   );
