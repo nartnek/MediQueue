@@ -3,7 +3,10 @@
 import { useState } from "react";
 
 interface LocationSearchProps {
-  onLocationFound: (latitude: number, longitude: number) => void;
+  onLocationFound: (
+    latitude: number,
+    longitude: number
+  ) => void;
   isLoading: boolean;
 }
 
@@ -11,16 +14,55 @@ export default function LocationSearch({
   onLocationFound,
   isLoading,
 }: LocationSearchProps) {
-  const [query, setQuery] = useState("");
+  const [address, setAddress] = useState("");
   const [isSearching, setIsSearching] = useState(false);
-  const [locationError, setLocationError] = useState<string | null>(null);
-  const [searchError, setSearchError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
-  const getCurrentLocation = () => {
-    setLocationError(null);
+  const handleAddressSearch = async (
+    event: React.FormEvent<HTMLFormElement>
+  ) => {
+    event.preventDefault();
+
+    if (!address.trim()) {
+      setError("Please enter an address or city.");
+      return;
+    }
+
+    setIsSearching(true);
+    setError(null);
+
+    try {
+      const response = await fetch(
+        `/api/geocode?address=${encodeURIComponent(address)}`
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          data.error || "Unable to find that address."
+        );
+      }
+
+      onLocationFound(data.latitude, data.longitude);
+    } catch (error) {
+      console.error(error);
+
+      setError(
+        error instanceof Error
+          ? error.message
+          : "Unable to find that address."
+      );
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  const handleUseCurrentLocation = () => {
+    setError(null);
 
     if (!navigator.geolocation) {
-      setLocationError(
+      setError(
         "Your browser does not support location services."
       );
       return;
@@ -28,8 +70,6 @@ export default function LocationSearch({
 
     navigator.geolocation.getCurrentPosition(
       (position) => {
-        setLocationError(null);
-
         onLocationFound(
           position.coords.latitude,
           position.coords.longitude
@@ -38,130 +78,76 @@ export default function LocationSearch({
       (error) => {
         switch (error.code) {
           case error.PERMISSION_DENIED:
-            setLocationError(
-              "Location access was denied. Please allow location access or search for a BC city or address instead."
+            setError(
+              "Location permission was denied. Please allow location access or search for an address instead."
             );
             break;
 
           case error.POSITION_UNAVAILABLE:
-            setLocationError(
-              "We couldn't determine your location. Please try again or search for a BC city or address."
+            setError(
+              "Your location could not be determined. Try searching for an address instead."
             );
             break;
 
           case error.TIMEOUT:
-            setLocationError(
+            setError(
               "The location request timed out. Please try again."
             );
             break;
 
           default:
-            setLocationError(
-              "Something went wrong while getting your location. Please try again."
+            setError(
+              "Unable to determine your location. Please search for an address instead."
             );
         }
-      },
-      {
-        enableHighAccuracy: true,
-        timeout: 10000,
-        maximumAge: 300000,
       }
     );
   };
 
-  const searchLocation = async () => {
-    if (!query.trim()) {
-      setSearchError("Please enter a BC city or address.");
-      return;
-    }
-
-    setIsSearching(true);
-    setSearchError(null);
-    setLocationError(null);
-
-    try {
-      const response = await fetch(
-        `/api/geocode?q=${encodeURIComponent(query)}`
-      );
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(
-          data.error || "Unable to find this location."
-        );
-      }
-
-      onLocationFound(data.latitude, data.longitude);
-    } catch (error) {
-      setSearchError(
-        error instanceof Error
-          ? error.message
-          : "Unable to find this location. Please try again."
-      );
-    } finally {
-      setIsSearching(false);
-    }
-  };
-
-  const isBusy = isLoading || isSearching;
+  const searching = isSearching || isLoading;
 
   return (
     <div className="mx-auto mt-8 w-full max-w-xl">
-      <button
-        onClick={getCurrentLocation}
-        disabled={isBusy}
-        className="mb-4 w-full rounded-lg bg-blue-600 px-6 py-3 font-medium text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
+      <form
+        onSubmit={handleAddressSearch}
+        className="flex flex-col gap-3 sm:flex-row"
       >
-        {isLoading
-          ? "Finding nearby hospitals..."
-          : "📍 Use my current location"}
-      </button>
-
-      <div className="flex gap-2">
         <input
           type="text"
-          value={query}
-          onChange={(event) => {
-            setQuery(event.target.value);
-            setSearchError(null);
-          }}
-          onKeyDown={(event) => {
-            if (event.key === "Enter") {
-              searchLocation();
-            }
-          }}
-          placeholder="Enter a BC city or address..."
-          disabled={isBusy}
-          className="flex-1 rounded-lg border border-gray-300 bg-white px-4 py-3 text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 disabled:bg-gray-100"
+          value={address}
+          onChange={(event) => setAddress(event.target.value)}
+          placeholder="Enter an address or city in BC"
+          disabled={searching}
+          className="min-w-0 flex-1 rounded-lg border border-gray-300 bg-white px-4 py-3 text-sm text-gray-900 shadow-sm outline-none transition placeholder:text-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 disabled:bg-gray-100"
         />
 
         <button
-          onClick={searchLocation}
-          disabled={isBusy}
-          className="rounded-lg bg-gray-900 px-5 py-3 font-medium text-white transition hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-60"
+          type="submit"
+          disabled={searching}
+          className="rounded-lg bg-blue-600 px-5 py-3 text-sm font-medium text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
         >
-          {isSearching ? "..." : "Search"}
+          {isSearching ? "Searching..." : "Search"}
+        </button>
+      </form>
+
+      <div className="mt-3">
+        <button
+          type="button"
+          onClick={handleUseCurrentLocation}
+          disabled={searching}
+          className="text-sm font-medium text-blue-600 transition hover:text-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          Use my current location
         </button>
       </div>
 
-      {locationError && (
-        <div
+      {error && (
+        <p
           role="alert"
-          className="mt-4 rounded-lg border border-red-200 bg-red-50 p-4 text-left text-sm text-red-700"
+          className="mt-3 text-left text-sm text-red-600"
         >
-          <p className="font-medium">Unable to get your location</p>
-          <p className="mt-1">{locationError}</p>
-        </div>
-      )}
-
-      {searchError && (
-        <div
-          role="alert"
-          className="mt-4 rounded-lg border border-red-200 bg-red-50 p-4 text-left text-sm text-red-700"
-        >
-          {searchError}
-        </div>
+          {error}
+        </p>
       )}
     </div>
   );
