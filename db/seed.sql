@@ -53,6 +53,19 @@ VALUES
     49.1770,
     -122.8420
 )
+
+INSERT INTO er_wait_times (
+    hospital_id,
+    wait_time_minutes
+)
+VALUES
+    ('vgh', 38),
+    ('stpauls', 52),
+    ('msj', 27),
+    ('burnaby', 44),
+    ('surrey', 61);
+
+    
 ON CONFLICT (id)
 DO UPDATE SET
     name = EXCLUDED.name,
@@ -62,3 +75,4 @@ DO UPDATE SET
     latitude = EXCLUDED.latitude,
     longitude = EXCLUDED.longitude,
     updated_at = CURRENT_TIMESTAMP;
+

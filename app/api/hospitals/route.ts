@@ -30,6 +30,7 @@ export async function GET(request: NextRequest) {
   const latitude = Number(searchParams.get("lat"));
   const longitude = Number(searchParams.get("lng"));
 
+  // Validate coordinates
   if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
     return NextResponse.json(
       {
@@ -56,28 +57,47 @@ export async function GET(request: NextRequest) {
   try {
     const result = await pool.query(`
       SELECT
-        id,
-        name,
-        address,
-        city,
-        province,
-        latitude,
-        longitude
-      FROM hospitals
-      WHERE province = 'BC'
+        h.id,
+        h.name,
+        h.address,
+        h.city,
+        h.province,
+        h.latitude,
+        h.longitude,
+        w.wait_time_minutes,
+        w.recorded_at
+      FROM hospitals h
+      LEFT JOIN LATERAL (
+        SELECT
+          wait_time_minutes,
+          recorded_at
+        FROM er_wait_times
+        WHERE hospital_id = h.id
+        ORDER BY recorded_at DESC
+        LIMIT 1
+      ) w ON true
+      WHERE h.province = 'BC'
     `);
 
     const hospitals = result.rows
       .map((hospital) => ({
-        ...hospital,
+        id: hospital.id,
+        name: hospital.name,
+        address: hospital.address,
+        city: hospital.city,
+        province: hospital.province,
+        latitude: hospital.latitude,
+        longitude: hospital.longitude,
+
         distance: calculateDistance(
           latitude,
           longitude,
           hospital.latitude,
           hospital.longitude
         ),
-        waitTime: null,
-        lastUpdated: null,
+
+        waitTime: hospital.wait_time_minutes,
+        lastUpdated: hospital.recorded_at,
       }))
       .sort((a, b) => a.distance - b.distance);
 
