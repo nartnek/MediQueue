@@ -2,9 +2,11 @@ export interface Hospital {
   id: string;
   name: string;
   address: string;
-  distance: number;
-  waitTime: number | null;
-  lastUpdated: string;
+  city: string;
+  province: string;
   latitude: number;
   longitude: number;
+  distance: number;
+  waitTime: number | null;
+  lastUpdated: string | null;
 }

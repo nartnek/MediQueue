@@ -10,10 +10,16 @@ export default function Home() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const [userLocation, setUserLocation] = useState<{
+    latitude: number;
+    longitude: number;
+  } | null>(null);
+
   const findNearbyHospitals = async (
     latitude: number,
     longitude: number
   ) => {
+    setUserLocation({ latitude, longitude });
     setIsLoading(true);
     setError(null);
 
@@ -32,6 +38,7 @@ export default function Home() {
     } catch (error) {
       console.error(error);
       setError("Unable to find nearby hospitals.");
+      setHospitals([]);
     } finally {
       setIsLoading(false);
     }
@@ -84,7 +91,14 @@ export default function Home() {
         </div>
       </section>
 
-      <HospitalList hospitals={hospitals} />
+      {userLocation && hospitals.length > 0 && (
+        <div className="mx-auto max-w-5xl px-6 pb-12">
+          <HospitalList
+            hospitals={hospitals}
+            userLocation={userLocation}
+          />
+        </div>
+      )}
     </main>
   );
 }

@@ -1,59 +1,36 @@
-"use client";
-
-import { useState } from "react";
 import { Hospital } from "@/types/hospital";
 import HospitalCard from "./HospitalCard";
 
 interface HospitalListProps {
   hospitals: Hospital[];
+  userLocation: {
+    latitude: number;
+    longitude: number;
+  };
 }
-
-type SortOption = "distance" | "waitTime";
 
 export default function HospitalList({
   hospitals,
+  userLocation,
 }: HospitalListProps) {
-  const [sortBy, setSortBy] = useState<SortOption>("distance");
-
-  const sortedHospitals = [...hospitals].sort((a, b) => {
-    if (sortBy === "distance") {
-      return a.distance - b.distance;
-    }
-
-    if (a.waitTime === null) return 1;
-    if (b.waitTime === null) return -1;
-
-    return a.waitTime - b.waitTime;
-  });
-
-  if (hospitals.length === 0) {
-    return null;
-  }
-
   return (
-    <section className="mx-auto w-full max-w-3xl px-6 pb-16">
-      <div className="mb-5 flex items-center justify-between">
-        <h2 className="text-xl font-semibold text-gray-900">
-          Nearby hospitals
+    <section>
+      <div className="mb-5">
+        <h2 className="text-2xl font-bold text-gray-900">
+          Nearby Hospitals
         </h2>
 
-        <select
-          value={sortBy}
-          onChange={(event) =>
-            setSortBy(event.target.value as SortOption)
-          }
-          className="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 outline-none focus:border-blue-500"
-        >
-          <option value="distance">Distance</option>
-          <option value="waitTime">Wait time</option>
-        </select>
+        <p className="mt-1 text-sm text-gray-500">
+          {hospitals.length} hospitals found
+        </p>
       </div>
 
       <div className="space-y-4">
-        {sortedHospitals.map((hospital) => (
+        {hospitals.map((hospital) => (
           <HospitalCard
             key={hospital.id}
             hospital={hospital}
+            userLocation={userLocation}
           />
         ))}
       </div>
