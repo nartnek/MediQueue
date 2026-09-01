@@ -13,10 +13,14 @@ export default function HospitalCard({
   hospital,
   userLocation,
 }: HospitalCardProps) {
+  const destination = encodeURIComponent(
+  `${hospital.name}, ${hospital.address}, ${hospital.city}, ${hospital.province}`
+);
+
   const mapsUrl =
     `https://www.google.com/maps/dir/?api=1` +
     `&origin=${userLocation.latitude},${userLocation.longitude}` +
-    `&destination=${hospital.latitude},${hospital.longitude}`;
+    `&destination=${destination}`;
 
   const getWaitLabel = (waitTime: number | null) => {
     if (waitTime === null) {

@@ -106,9 +106,13 @@ export default function HospitalPage({
     );
   }
 
+  const destination = encodeURIComponent(
+  `${hospital.name}, ${hospital.address}, ${hospital.city}, ${hospital.province}`
+);
+
   const mapsUrl =
     `https://www.google.com/maps/dir/?api=1` +
-    `&destination=${hospital.latitude},${hospital.longitude}`;
+    `&destination=${destination}`;
 
   return (
     <main className="min-h-screen bg-gray-50">
