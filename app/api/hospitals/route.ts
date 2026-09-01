@@ -31,7 +31,7 @@ function calculateDistance(
   lon1: number,
   lat2: number,
   lon2: number
-) {
+): number {
   const R = 6371;
 
   const dLat = ((lat2 - lat1) * Math.PI) / 180;
@@ -55,6 +55,7 @@ export async function GET(request: NextRequest) {
   const latParam = searchParams.get("lat");
   const lngParam = searchParams.get("lng");
 
+  // Validate required parameters
   if (latParam === null || lngParam === null) {
     return NextResponse.json(
       {
@@ -67,6 +68,7 @@ export async function GET(request: NextRequest) {
   const latitude = Number(latParam);
   const longitude = Number(lngParam);
 
+  // Validate number format
   if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
     return NextResponse.json(
       {
@@ -76,6 +78,7 @@ export async function GET(request: NextRequest) {
     );
   }
 
+  // Validate coordinate ranges
   if (latitude < -90 || latitude > 90) {
     return NextResponse.json(
       {
@@ -107,6 +110,7 @@ export async function GET(request: NextRequest) {
         w.wait_time_minutes,
         w.recorded_at
       FROM hospitals h
+
       LEFT JOIN LATERAL (
         SELECT
           wait_time_minutes,
@@ -116,6 +120,7 @@ export async function GET(request: NextRequest) {
         ORDER BY recorded_at DESC
         LIMIT 1
       ) w ON true
+
       WHERE h.province = 'BC'
     `);
 
