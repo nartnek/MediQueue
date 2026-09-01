@@ -98,7 +98,7 @@ export default function HospitalPage({
             </h1>
 
             <p className="mt-2 text-sm text-gray-500">
-              We couldn't retrieve the requested hospital.
+              We could not retrieve the requested hospital.
             </p>
           </div>
         </div>
