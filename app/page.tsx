@@ -62,9 +62,6 @@ export default function Home() {
             MediQueue
           </h1>
 
-          <span className="hidden text-sm text-gray-500 sm:block">
-            British Columbia
-          </span>
         </div>
       </nav>
 
