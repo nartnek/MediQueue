@@ -1,11 +1,15 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
 import { Hospital } from "@/types/hospital";
 import HospitalList from "@/components/HospitalList";
 import LocationSearch from "@/components/LocationSearch";
 
 export default function Home() {
+  const searchParams = useSearchParams();
+  const router = useRouter();
+
   const [hospitals, setHospitals] = useState<Hospital[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -15,26 +19,33 @@ export default function Home() {
     longitude: number;
   } | null>(null);
 
-  // Live clock — the wait-time model varies by time of day,
-  // so surfacing the current time in the nav ties the UI to that logic.
+  // Live clock
   const [now, setNow] = useState(() => new Date());
 
   useEffect(() => {
-    const id = setInterval(() => setNow(new Date()), 30_000);
+    const id = setInterval(() => {
+      setNow(new Date());
+    }, 30_000);
+
     return () => clearInterval(id);
   }, []);
 
   const clockText = now.toLocaleString("en-CA", {
-  weekday: "short",
-  hour: "numeric",
-  minute: "2-digit",
-});
+    weekday: "short",
+    hour: "numeric",
+    minute: "2-digit",
+  });
 
-  const findNearbyHospitals = async (
+  /**
+   * Fetch hospitals from the API.
+   *
+   * This function owns all of the state updates associated
+   * with loading hospital results.
+   */
+  const fetchHospitals = async (
     latitude: number,
     longitude: number
   ) => {
-    setUserLocation({ latitude, longitude });
     setIsLoading(true);
     setError(null);
     setHospitals([]);
@@ -53,6 +64,10 @@ export default function Home() {
       }
 
       setHospitals(data.hospitals);
+      setUserLocation({
+        latitude,
+        longitude,
+      });
     } catch (error) {
       console.error(error);
 
@@ -63,10 +78,102 @@ export default function Home() {
       );
 
       setHospitals([]);
+      setUserLocation(null);
     } finally {
       setIsLoading(false);
     }
   };
+
+  /**
+   * Called when LocationSearch finds a location.
+   *
+   * The coordinates are stored in the URL so the search
+   * can be restored when the user returns from a hospital
+   * details page.
+   */
+  const findNearbyHospitals = (
+    latitude: number,
+    longitude: number
+  ) => {
+    const params = new URLSearchParams();
+
+    params.set("lat", String(latitude));
+    params.set("lng", String(longitude));
+
+    router.push(`/?${params.toString()}`);
+  };
+
+  /**
+   * Restore a previous search from the URL.
+   *
+   * The async function is created inside the effect so the
+   * effect itself does not directly call a state-changing
+   * function synchronously.
+   */
+  useEffect(() => {
+    const latParam = searchParams.get("lat");
+    const lngParam = searchParams.get("lng");
+
+    if (!latParam || !lngParam) {
+      return;
+    }
+
+    const latitude = Number(latParam);
+    const longitude = Number(lngParam);
+
+    if (
+      !Number.isFinite(latitude) ||
+      !Number.isFinite(longitude) ||
+      latitude < -90 ||
+      latitude > 90 ||
+      longitude < -180 ||
+      longitude > 180
+    ) {
+      return;
+    }
+
+    const loadHospitals = async () => {
+      setIsLoading(true);
+      setError(null);
+      setHospitals([]);
+
+      try {
+        const response = await fetch(
+          `/api/hospitals?lat=${latitude}&lng=${longitude}`
+        );
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(
+            data.error || "Failed to fetch nearby hospitals."
+          );
+        }
+
+        setHospitals(data.hospitals);
+
+        setUserLocation({
+          latitude,
+          longitude,
+        });
+      } catch (error) {
+        console.error(error);
+
+        setError(
+          error instanceof Error
+            ? error.message
+            : "Unable to find nearby hospitals. Please try again."
+        );
+
+        setHospitals([]);
+        setUserLocation(null);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    void loadHospitals();
+  }, [searchParams]);
 
   return (
     <main className="min-h-screen bg-gray-50">
@@ -79,7 +186,10 @@ export default function Home() {
 
           <div className="flex items-center gap-2 text-sm text-slate-300">
             <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
-            <span className="font-mono tabular-nums">{clockText}</span>
+
+            <span className="font-mono tabular-nums">
+              {clockText}
+            </span>
           </div>
         </div>
       </nav>
@@ -89,7 +199,8 @@ export default function Home() {
         <div className="mx-auto max-w-3xl">
           <div className="mb-6 inline-flex items-center gap-2 text-sm font-medium text-emerald-700">
             <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-            Live across British Columbia
+
+            Across British Columbia
           </div>
 
           <h2 className="text-4xl font-bold tracking-tight text-gray-900 sm:text-6xl">
@@ -118,9 +229,7 @@ export default function Home() {
                 Unable to load hospitals
               </p>
 
-              <p className="mt-1">
-                {error}
-              </p>
+              <p className="mt-1">{error}</p>
             </div>
           )}
 
@@ -145,8 +254,7 @@ export default function Home() {
             </p>
 
             <p className="mt-1 text-sm text-gray-500">
-              Checking hospitals around your selected
-              location.
+              Checking hospitals around your selected location.
             </p>
           </div>
         </section>
@@ -175,7 +283,7 @@ export default function Home() {
         </section>
       )}
 
-      {/* Results (also handles the empty state via HospitalList itself) */}
+      {/* Results */}
       {!isLoading && !error && userLocation && (
         <div className="mx-auto max-w-5xl px-6 pb-16">
           <HospitalList

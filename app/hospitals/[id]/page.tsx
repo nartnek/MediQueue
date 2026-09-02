@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { Hospital } from "@/types/hospital";
 import WaitTimeHistory from "@/components/WaitTimeHistory";
 
@@ -18,15 +19,24 @@ export default function HospitalPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
+  const searchParams = useSearchParams();
+
   const [hospital, setHospital] =
     useState<HospitalDetail | null>(null);
+
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  const [hospitalId, setHospitalId] = useState<string | null>(
+    null
+  );
 
   useEffect(() => {
     const fetchHospital = async () => {
       try {
         const { id } = await params;
+
+        setHospitalId(id);
 
         const response = await fetch(
           `/api/hospitals/${id}`
@@ -59,6 +69,14 @@ export default function HospitalPage({
     fetchHospital();
   }, [params]);
 
+  const lat = searchParams.get("lat");
+  const lng = searchParams.get("lng");
+
+  const backUrl =
+    lat && lng
+      ? `/?lat=${encodeURIComponent(lat)}&lng=${encodeURIComponent(lng)}`
+      : "/";
+
   if (isLoading) {
     return (
       <main className="min-h-screen bg-gray-50">
@@ -71,6 +89,9 @@ export default function HospitalPage({
               MediQueue
             </Link>
 
+            <span className="text-sm text-slate-300">
+              British Columbia
+            </span>
           </div>
         </nav>
 
@@ -129,7 +150,7 @@ export default function HospitalPage({
             </p>
 
             <Link
-              href="/"
+              href={backUrl}
               className="mt-5 inline-block rounded-lg bg-[#0F1A2B] px-5 py-2.5 text-sm font-medium text-white transition hover:bg-slate-800"
             >
               Back to hospitals
@@ -174,7 +195,7 @@ export default function HospitalPage({
       <nav className="border-b border-[#0F1A2B] bg-[#0F1A2B]">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
           <Link
-            href="/"
+            href={backUrl}
             className="text-xl font-bold tracking-tight text-white"
           >
             MediQueue
@@ -189,7 +210,7 @@ export default function HospitalPage({
       <div className="mx-auto max-w-5xl px-6 py-10">
         {/* Back link */}
         <Link
-          href="/"
+          href={backUrl}
           className="text-sm font-medium text-gray-500 transition hover:text-gray-900"
         >
           ← Back to hospitals
@@ -255,7 +276,7 @@ export default function HospitalPage({
             </a>
 
             <Link
-              href="/"
+              href={backUrl}
               className="rounded-lg border border-gray-300 px-5 py-3 text-center text-sm font-medium text-gray-700 transition hover:bg-gray-50"
             >
               Find another hospital

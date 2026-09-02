@@ -97,7 +97,7 @@ export default function HospitalCard({
       {/* Actions */}
       <div className="mt-5 flex flex-col gap-2 border-t border-gray-100 pt-4 sm:flex-row">
         <Link
-          href={`/hospitals/${hospital.id}`}
+          href={`/hospitals/${hospital.id}?lat=${userLocation.latitude}&lng=${userLocation.longitude}`}
           className="flex-1 rounded-lg border border-gray-300 px-4 py-2.5 text-center text-sm font-medium text-gray-700 transition hover:bg-gray-50"
         >
           View details
