@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Hospital } from "@/types/hospital";
 import HospitalList from "@/components/HospitalList";
 import LocationSearch from "@/components/LocationSearch";
@@ -14,6 +14,21 @@ export default function Home() {
     latitude: number;
     longitude: number;
   } | null>(null);
+
+  // Live clock — the wait-time model varies by time of day,
+  // so surfacing the current time in the nav ties the UI to that logic.
+  const [now, setNow] = useState(() => new Date());
+
+  useEffect(() => {
+    const id = setInterval(() => setNow(new Date()), 30_000);
+    return () => clearInterval(id);
+  }, []);
+
+  const clockText = now.toLocaleString("en-CA", {
+  weekday: "short",
+  hour: "numeric",
+  minute: "2-digit",
+});
 
   const findNearbyHospitals = async (
     latitude: number,
@@ -56,20 +71,25 @@ export default function Home() {
   return (
     <main className="min-h-screen bg-gray-50">
       {/* Navigation */}
-      <nav className="border-b border-gray-200 bg-white">
+      <nav className="border-b border-[#0F1A2B] bg-[#0F1A2B]">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
-          <h1 className="text-xl font-bold tracking-tight text-gray-900">
+          <h1 className="text-xl font-bold tracking-tight text-white">
             MediQueue
           </h1>
 
+          <div className="flex items-center gap-2 text-sm text-slate-300">
+            <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
+            <span className="font-mono tabular-nums">{clockText}</span>
+          </div>
         </div>
       </nav>
 
       {/* Hero */}
       <section className="px-6 pb-16 pt-20 text-center sm:pt-24">
         <div className="mx-auto max-w-3xl">
-          <div className="mb-5 inline-flex items-center rounded-full bg-blue-50 px-4 py-2 text-sm font-medium text-blue-700">
-            🏥 Emergency care in British Columbia
+          <div className="mb-6 inline-flex items-center gap-2 text-sm font-medium text-emerald-700">
+            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+            Live across British Columbia
           </div>
 
           <h2 className="text-4xl font-bold tracking-tight text-gray-900 sm:text-6xl">
@@ -77,15 +97,17 @@ export default function Home() {
           </h2>
 
           <p className="mx-auto mt-6 max-w-2xl text-lg leading-8 text-gray-600">
-            Find nearby emergency departments in BC,
-            compare estimated wait times, and get directions
-            to the hospital that works best for you.
+            Compare estimated wait times at nearby emergency
+            departments and get directions to the hospital
+            that works best for you.
           </p>
 
-          <LocationSearch
-            onLocationFound={findNearbyHospitals}
-            isLoading={isLoading}
-          />
+          <div className="mx-auto mt-10 max-w-xl rounded-2xl border border-gray-200 bg-white p-6 text-left shadow-sm">
+            <LocationSearch
+              onLocationFound={findNearbyHospitals}
+              isLoading={isLoading}
+            />
+          </div>
 
           {error && (
             <div
@@ -102,8 +124,9 @@ export default function Home() {
             </div>
           )}
 
-          <p className="mt-5 text-xs text-gray-400">
-            Currently serving hospitals in British Columbia
+          <p className="mt-6 text-xs text-gray-400">
+            Estimates update through the day based on demand
+            patterns at each hospital.
           </p>
         </div>
       </section>
@@ -115,7 +138,7 @@ export default function Home() {
             role="status"
             className="rounded-xl border border-gray-200 bg-white p-10 text-center shadow-sm"
           >
-            <div className="mx-auto h-8 w-8 animate-spin rounded-full border-4 border-gray-200 border-t-blue-600" />
+            <div className="mx-auto h-8 w-8 animate-spin rounded-full border-4 border-gray-200 border-t-teal-600" />
 
             <p className="mt-4 font-medium text-gray-900">
               Finding nearby hospitals...
@@ -152,31 +175,15 @@ export default function Home() {
         </section>
       )}
 
-      {/* Results */}
-      {!isLoading &&
-        !error &&
-        userLocation &&
-        hospitals.length > 0 && (
-          <div className="mx-auto max-w-5xl px-6 pb-16">
-            <HospitalList
-              hospitals={hospitals}
-              userLocation={userLocation}
-            />
-          </div>
-        )}
-
-      {/* No results */}
-      {!isLoading &&
-        !error &&
-        userLocation &&
-        hospitals.length === 0 && (
-          <div className="mx-auto max-w-5xl px-6 pb-16">
-            <HospitalList
-              hospitals={hospitals}
-              userLocation={userLocation}
-            />
-          </div>
-        )}
+      {/* Results (also handles the empty state via HospitalList itself) */}
+      {!isLoading && !error && userLocation && (
+        <div className="mx-auto max-w-5xl px-6 pb-16">
+          <HospitalList
+            hospitals={hospitals}
+            userLocation={userLocation}
+          />
+        </div>
+      )}
     </main>
   );
 }

@@ -16,9 +16,7 @@ export async function GET(
 
     if (!id) {
       return NextResponse.json(
-        {
-          error: "Hospital ID is required.",
-        },
+        { error: "Hospital ID is required." },
         { status: 400 }
       );
     }
@@ -27,23 +25,32 @@ export async function GET(
 
     if (!hospital) {
       return NextResponse.json(
-        {
-          error: "Hospital not found.",
-        },
+        { error: "Hospital not found." },
         { status: 404 }
       );
     }
 
     return NextResponse.json({
-      hospital,
+      hospital: {
+        id: hospital.id,
+        name: hospital.name,
+        address: hospital.address,
+        city: hospital.city,
+        province: hospital.province,
+        latitude: Number(hospital.latitude),
+        longitude: Number(hospital.longitude),
+        waitTime:
+          hospital.wait_time_minutes !== null
+            ? Number(hospital.wait_time_minutes)
+            : null,
+        lastUpdated: hospital.recorded_at,
+      },
     });
   } catch (error) {
     console.error("Database error:", error);
 
     return NextResponse.json(
-      {
-        error: "Unable to retrieve hospital.",
-      },
+      { error: "Unable to retrieve hospital." },
       { status: 500 }
     );
   }

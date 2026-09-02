@@ -1,3 +1,5 @@
+"use client";
+
 import Link from "next/link";
 import { Hospital } from "@/types/hospital";
 
@@ -9,102 +11,117 @@ interface HospitalCardProps {
   };
 }
 
+function getWaitTimeLabel(waitTime: number | null) {
+  if (waitTime === null) {
+    return {
+      label: "Unavailable",
+      className: "text-gray-500",
+    };
+  }
+
+  if (waitTime <= 30) {
+    return {
+      label: "Short wait",
+      className: "text-emerald-600",
+    };
+  }
+
+  if (waitTime <= 60) {
+    return {
+      label: "Moderate wait",
+      className: "text-amber-600",
+    };
+  }
+
+  return {
+    label: "Long wait",
+    className: "text-red-600",
+  };
+}
+
 export default function HospitalCard({
   hospital,
   userLocation,
 }: HospitalCardProps) {
+  const waitTime = getWaitTimeLabel(hospital.waitTime);
+
   const destination = encodeURIComponent(
-  `${hospital.name}, ${hospital.address}, ${hospital.city}, ${hospital.province}`
-);
+    `${hospital.name}, ${hospital.address}, ${hospital.city}, ${hospital.province}`
+  );
 
   const mapsUrl =
     `https://www.google.com/maps/dir/?api=1` +
     `&origin=${userLocation.latitude},${userLocation.longitude}` +
     `&destination=${destination}`;
 
-  const getWaitLabel = (waitTime: number | null) => {
-    if (waitTime === null) {
-      return "Wait time unavailable";
-    }
-
-    if (waitTime <= 30) {
-      return "Short wait";
-    }
-
-    if (waitTime <= 60) {
-      return "Moderate wait";
-    }
-
-    return "Long wait";
-  };
-
   return (
-    <article className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm transition hover:shadow-md">
-      <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
-        <div>
-          <Link href={`/hospitals/${hospital.id}`}>
-            <h3 className="text-xl font-bold text-gray-900 hover:text-blue-600">
-              {hospital.name}
-            </h3>
-          </Link>
+    <article className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm transition-shadow hover:shadow-md">
+      <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+        {/* Hospital information */}
+        <div className="min-w-0">
+          <h3 className="text-lg font-semibold text-gray-900">
+            {hospital.name}
+          </h3>
 
           <p className="mt-1 text-sm text-gray-500">
-            {hospital.address}
+            {hospital.address}, {hospital.city}, {hospital.province}
           </p>
 
-          <p className="mt-3 text-sm font-medium text-gray-700">
-            📍 {hospital.distance.toFixed(1)} km away
+          <p className="mt-2 text-sm font-medium text-gray-700">
+            {hospital.distance.toFixed(1)} km away
           </p>
         </div>
 
-        <div className="rounded-lg bg-gray-50 px-5 py-4 text-center">
-          <p className="text-xs font-medium uppercase tracking-wide text-gray-500">
-            ER wait
+        {/* Wait time */}
+        <div className="shrink-0 sm:text-right">
+          <p className="text-xs font-medium uppercase tracking-wide text-gray-400">
+            Estimated wait
           </p>
 
           {hospital.waitTime !== null ? (
-            <>
-              <p className="mt-1 text-3xl font-bold text-gray-900">
-                {hospital.waitTime}
-                <span className="ml-1 text-sm font-medium text-gray-500">
-                  min
-                </span>
-              </p>
-
-              <p className="mt-1 text-xs text-gray-500">
-                {getWaitLabel(hospital.waitTime)}
-              </p>
-            </>
+            <p className="mt-1 text-2xl font-bold text-gray-900">
+              {hospital.waitTime} min
+            </p>
           ) : (
-            <p className="mt-2 text-sm text-gray-500">
+            <p className="mt-1 text-lg font-semibold text-gray-500">
               Unavailable
             </p>
           )}
+
+          <p className={`mt-1 text-sm font-medium ${waitTime.className}`}>
+            {waitTime.label}
+          </p>
         </div>
       </div>
 
-      <div className="mt-5 flex flex-wrap gap-3 border-t border-gray-100 pt-5">
+      {/* Actions */}
+      <div className="mt-5 flex flex-col gap-2 border-t border-gray-100 pt-4 sm:flex-row">
         <Link
           href={`/hospitals/${hospital.id}`}
-          className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-700"
+          className="flex-1 rounded-lg border border-gray-300 px-4 py-2.5 text-center text-sm font-medium text-gray-700 transition hover:bg-gray-50"
         >
-          View Details
+          View details
         </Link>
 
         <a
           href={mapsUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 transition hover:bg-gray-50"
+          className="flex-1 rounded-lg bg-[#0F1A2B] px-4 py-2.5 text-center text-sm font-medium text-white transition hover:bg-slate-800"
         >
-          Directions
+          Get directions
         </a>
       </div>
 
+      {/* Last updated */}
       {hospital.lastUpdated && (
         <p className="mt-3 text-xs text-gray-400">
-          Updated{" "}
-          {new Date(hospital.lastUpdated).toLocaleString()}
+          Last updated{" "}
+          {new Date(hospital.lastUpdated).toLocaleString("en-CA", {
+            weekday: "short",
+            hour: "numeric",
+            minute: "2-digit",
+          })}
         </p>
       )}
     </article>
